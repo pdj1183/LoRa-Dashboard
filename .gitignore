@@ -97,6 +97,7 @@ docker-compose*.yml.docker-compose-v3/
 /firmware/*.hex
 /firmware/*.img
 /firmware/.cache/
+/build
 
 # CMake
 CMakeCache.txt
