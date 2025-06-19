@@ -1,2 +1,110 @@
-.DS_STORE
-**/.DS_STORE
+# ─── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+Icon? 
+
+# Finder tags
+*.icloud
+
+# ─── Editor & tooling ─────────────────────────────────────────────────────────
+# NeoVim/Vim swap files, backups, undo
+*~
+*.swp
+*.swo
+*.un~
+
+# ctags
+tags
+
+# VSCode/JetBrains (if anyone opens the repo there)
+.vscode/
+.idea/
+
+# ─── Node / Frontend ──────────────────────────────────────────────────────────
+# dependencies
+/frontend/node_modules/
+
+# build output
+/frontend/dist/
+/frontend/build/
+/frontend/.vite/
+/frontend/.cache/
+/frontend/.parcel-cache/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# environment files
+/frontend/.env
+/frontend/.env.*    # .env.local, .env.development.local, etc.
+
+# node_modules
+/frontend/node_modules/
+
+
+# ─── Python / Backend ─────────────────────────────────────────────────────────
+# virtual envs
+.venv/
+venv/
+env/
+ENV/
+/backend/.venv/
+/backend/env/
+
+# bytecode
+__pycache__/
+*.py[cod]
+
+# coverage
+htmlcov/
+.coverage
+.coverage.*
+.pytest_cache/
+
+# pip logs
+pip-log.txt
+
+# SAM artifacts
+/backend/.aws-sam/
+
+# AWS credentials (if you accidentally checked them in)
+/backend/.aws/
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+# override files, local envs
+docker-compose.override.yml
+docker-compose.*.yml
+.env
+*.env.local
+
+# volumes, machine data
+docker-compose*.yml.docker-compose-v3/
+# (or whatever you name your volume/compose state dirs)
+
+# ─── ESP-IDF / Firmware ───────────────────────────────────────────────────────
+/firmware/build/
+/firmware/sdkconfig
+/firmware/sdkconfig.old
+/firmware/*.bin
+/firmware/*.elf
+/firmware/*.hex
+/firmware/*.img
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Logs & monitor
+/firmware/esp-idf.log
+
+# ─── Misc & Logs ───────────────────────────────────────────────────────────────
+*.log
+logs/
+
