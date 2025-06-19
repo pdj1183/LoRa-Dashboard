@@ -1,0 +1,43 @@
+services:
+#    mqtt:
+#        image: eclipse-mosquitto:2.0
+#        ports:
+#            - "1883:1883"
+#
+#    dynamodb:
+#        image: amazon/dynamodb-local
+#        command: "-jar DynamoDBLocal.jar -inMemory -port 8000"
+#        ports:
+#            - "8000:8000"
+#
+#    localstack:
+#        image: localstack/localstack
+#        ports:
+#            - "4566:4566"
+#        environment:
+#            - SERVICES=iot,dynamodb
+#            - DEFAULT_REGION=us-east-1
+#
+#    backend:
+#        build:
+#            context: ./backend
+#            dockerfile: Dockerfile
+#            args:
+#                PYTHON_VERSION: "3.11"
+#        volumes:
+#            - ./backend:/app
+#        environment:
+#            - AWS_ENDPOINT_URL=http://localstack:4566
+#            - DYNAMODB_URL=http://dynamodb:8000
+#        ports:
+#            - "8001:8001"
+
+  frontend:
+    image: node:18-bullseye
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: >
+      sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
