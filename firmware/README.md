@@ -1,25 +1,24 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 | Linux |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- | ----- |
+| Supported Targets | ESP32-S3 |
+| ----------------- | -------- |
 
-# Hello World Example
+# LoRa Sensor Firmware
+Simple firmware that will initialize a device_id and connect to Wifi. After connectiing the device will start sending out MQTT messages containing data from a "sensor loop".
+Currently the sensor isn't implemented but the loop will output 28 degrees celsius. 
 
-Starts a FreeRTOS task to print "Hello World".
+I am looking to add display output and device configuration over the air.
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+Uses esp-idf so that is required to build/flash.
+
 
 ## How to use example
 
-Follow detailed instructions provided specifically for this example.
+idf.py build
+idf.py flash
+idf.py monitor
 
-Select the instructions depending on Espressif chip installed on your development board:
+## Project contents
 
-- [ESP32 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/index.html)
-- [ESP32-S2 Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
-
-
-## Example folder contents
-
-The project **hello_world** contains one source file in C language [hello_world_main.c](main/hello_world_main.c). The file is located in folder [main](main).
+The project's main source file in C language [app_main.c](main/app_main.c) is located in folder [main](main).
 
 ESP-IDF projects are built using CMake. The project build configuration is contained in `CMakeLists.txt` files that provide set of directives and instructions describing the project's source files and targets (executable, library, or both).
 
@@ -27,27 +26,44 @@ Below is short explanation of remaining files in the project folder.
 
 ```
 ├── CMakeLists.txt
-├── pytest_hello_world.py      Python script used for automated testing
+├── include
+│   ├── secrets.cmake
+├── tests
+│   ├── pytest_app_main.py
 ├── main
 │   ├── CMakeLists.txt
-│   └── hello_world_main.c
+│   └── device_meta.c
+│   └── device_meta.h
+│   └── json_payload.c
+│   └── json_payload.h
+│   └── mqtt.c
+│   └── mqtt.h
+│   └── sensor_task.c
+│   └── sensor_task.h
+│   └── wifi.c
+│   └── wifi.h
 └── README.md                  This is the file you are currently reading
 ```
 
-For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+### device_meta
 
-## Troubleshooting
+Generates a device_id from the devices mac address.
 
-* Program upload failure
+### json_payload
 
-    * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
-    * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+jsonifys sensor output and device_id and its uptime.
 
-## Technical support and feedback
+### mqtt
 
-Please use the following feedback channels:
+Initializes and starts the MQTT app. Also contains the function to send out MQTT messages.
 
-* For technical queries, go to the [esp32.com](https://esp32.com/) forum
-* For a feature request or bug report, create a [GitHub issue](https://github.com/espressif/esp-idf/issues)
+### sensor_task
 
-We will get back to you as soon as possible.
+Defines the sensor loop where it will "read" sensor output of 28 degrees.
+Calls generate_telemetry_json and mqtt_send_telemetry to format sensor output and send it.
+
+Might reformat so that those are done in main app but we will see.
+
+### wifi
+
+Attempts to connect to Wifi so that the device is able to send out it's MQTT messages.

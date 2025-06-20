@@ -10,6 +10,6 @@ add_compile_definitions(
 )
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(app_main)
+project(lora firmware)
 
 
