@@ -91,16 +91,20 @@ docker-compose*.yml.docker-compose-v3/
 /firmware/build/
 /firmware/sdkconfig
 /firmware/sdkconfig.old
+/firmware/sdkconfig.ci
 /firmware/*.bin
 /firmware/*.elf
 /firmware/*.hex
 /firmware/*.img
+/firmware/.cache/
+/build
 
 # CMake
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 Makefile
+secrets.cmake
 
 # Logs & monitor
 /firmware/esp-idf.log
