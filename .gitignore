@@ -76,6 +76,9 @@ pip-log.txt
 # AWS credentials (if you accidentally checked them in)
 /backend/.aws/
 
+# ─── DynamoDB ───────────────────────────────────────────────────────────────────
+/dynamodb/data/
+
 # ─── Docker ───────────────────────────────────────────────────────────────────
 # override files, local envs
 docker-compose.override.yml

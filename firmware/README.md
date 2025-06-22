@@ -57,6 +57,35 @@ jsonifys sensor output and device_id and its uptime.
 
 Initializes and starts the MQTT app. Also contains the function to send out MQTT messages.
 
+Here is the mqtt client config:
+
+```c
+esp_mqtt_client_config_t mqtt_cfg = {
+        .broker = {.address = {.uri = "mqtt://192.168.1.22:1883"}}
+    };
+```
+
+Here is the mqtt_send_telemetry_json function:
+```c
+void mqtt_send_telemetry_json(const char *json_str) {
+    if (s_mqtt_client == NULL || json_str == NULL) {
+        ESP_LOGW(TAG, "MQTT client not ready or JSON is null");
+        return;
+    }
+
+    char topic[128];
+    snprintf(topic, sizeof(topic), "lora/devices/%s/telemetry", s_device_id);
+
+    int msg_id = esp_mqtt_client_publish(s_mqtt_client, topic, json_str, 0, 1, 0);
+    if (msg_id != -1) {
+        ESP_LOGI(TAG, "Published telemetry (msg_id=%d): %s", msg_id, json_str);
+    } else {
+        ESP_LOGE(TAG, "Failed to publish telemetry");
+    }
+}
+
+```
+
 ### sensor_task
 
 Defines the sensor loop where it will "read" sensor output of 28 degrees.
