@@ -1,14 +1,14 @@
 services:
-    frontend:
-        image: node:18-bullseye
-        working_dir: /app
-        volumes:
-            - ./frontend:/app
-        command: >
-            sh -c "npm install && npm run dev -- --host"
-        ports:
-            - "5173:5173"
-
+#    frontend:
+#        image: node:18-bullseye
+#        working_dir: /app
+#        volumes:
+#            - ./frontend:/app
+#        command: >
+#            sh -c "npm install && npm run dev -- --host"
+#        ports:
+#            - "5173:5173"
+#
     mqtt:
         image: eclipse-mosquitto:2.0
         ports:
@@ -16,12 +16,14 @@ services:
         volumes:
             - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
 
-#    dynamodb:
-#        image: amazon/dynamodb-local
-#        command: "-jar DynamoDBLocal.jar -inMemory -port 8000"
-#        ports:
-#            - "8000:8000"
-#
+    dynamodb:
+      image: amazon/dynamodb-local
+      command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /home/dynamodblocal/data -port 8000"
+      volumes:
+        - ./dynamodb/data:/home/dynamodblocal/data
+      ports:
+        - "8000:8000"
+  
 #    localstack:
 #        image: localstack/localstack
 #        ports:
