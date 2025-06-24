@@ -10,6 +10,13 @@
 #include "lwip/sys.h"
 #include "nvs_flash.h"
 
+#include "freertos/event_groups.h"
+
+#define WIFI_CONNECTED_BIT BIT0
+
+static EventGroupHandle_t wifi_event_group;
+
+
 const char *ssid = WIFI_SSID;
 const char *pass = WIFI_PASSWORD;
 
@@ -18,11 +25,24 @@ static const char *TAG = "wifi_module";
 
 static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data) {
-    // Handle events with logs and retry logic here...
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
+        esp_wifi_connect();
+
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+        ESP_LOGW(TAG, "WiFi disconnected. Attempting reconnect...");
+        esp_wifi_connect();
+
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        ESP_LOGI(TAG, "Got IP Address: " IPSTR, IP2STR(&event->ip_info.ip));
+        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+    }
 }
+
 
 esp_err_t wifi_connection() {
     esp_err_t ret;
+    wifi_event_group = xEventGroupCreate();
 
     // Initialize NVS for persistent storage
     ret = nvs_flash_init();
@@ -75,17 +95,8 @@ esp_err_t wifi_connection() {
     }
 
     // Wi-Fi Start Phase
-    ret = esp_wifi_start();
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_start failed: %s", esp_err_to_name(ret));
-        return ret;
-    }
-
-    ret = esp_wifi_set_mode(WIFI_MODE_STA);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_wifi_set_mode failed: %s", esp_err_to_name(ret));
-        return ret;
-    }
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     // Wi-Fi Connect Phase
     ret = esp_wifi_connect();
@@ -95,6 +106,21 @@ esp_err_t wifi_connection() {
     }
 
     ESP_LOGI(TAG, "WiFi initialization complete. SSID: %s, password: %s", ssid, pass);
+    EventBits_t bits = xEventGroupWaitBits(
+        wifi_event_group,
+        WIFI_CONNECTED_BIT,
+        pdFALSE,  // don't clear the bit
+        pdFALSE,
+        pdMS_TO_TICKS(10000)  // 10s timeout
+    );
+
+    if (bits & WIFI_CONNECTED_BIT) {
+        ESP_LOGI(TAG, "Wi-Fi connected and got IP");
+        return ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "Wi-Fi connection timeout");
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 

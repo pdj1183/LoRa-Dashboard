@@ -13,23 +13,35 @@ static const char *TAG = "sensor_task";
 static void sensor_loop(void *arg) {
     const char *device_id = (const char *)arg;
 
+    // Wait until connected before starting to publish
+    while (!mqtt_is_connected()) {
+        ESP_LOGI(TAG, "Waiting for MQTT connection...");
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
+    ESP_LOGI(TAG, "MQTT connected – starting telemetry loop");
+
     while (1) {
-        // Simulate reading a temperature sensor
         float temperature = 28.0;
         ESP_LOGI(TAG, "Simulated Temp: %.2f°C", temperature);
 
-        // Generate JSON
         char *json_str = generate_telemetry_json(device_id, temperature);
         if (json_str == NULL) {
             ESP_LOGE(TAG, "Failed to create JSON");
         } else {
-            mqtt_send_telemetry_json(json_str);
+            // double check before publishing
+            if (mqtt_is_connected()) {
+                mqtt_send_telemetry_json(json_str);
+            } else {
+                ESP_LOGW(TAG, "MQTT not connected — skipping publish");
+            }
             free(json_str);
         }
 
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+
 
 // Update function to return esp_err_t
 esp_err_t start_sensor_task(const char *device_id) {
