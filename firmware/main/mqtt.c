@@ -12,6 +12,13 @@ static char s_device_id[32] = {0};
 // Keep track of the MQTT client handle globally
 static esp_mqtt_client_handle_t s_mqtt_client = NULL;
 
+static bool mqtt_connected = false;
+
+bool mqtt_is_connected(void) {
+    return mqtt_connected;
+}
+
+
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id,
                                void *event_data) {
     ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%" PRIi32 "", base, event_id);
@@ -20,9 +27,12 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+            mqtt_connected = true;
             break;
+
         case MQTT_EVENT_DISCONNECTED:
             ESP_LOGW(TAG, "MQTT_EVENT_DISCONNECTED");
+            mqtt_connected = false;
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGE(TAG, "MQTT_EVENT_ERROR");
