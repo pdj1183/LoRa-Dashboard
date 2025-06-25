@@ -12,6 +12,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(connect_and_loop())
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 app.include_router(api_router)
 app.include_router(ws_router)
