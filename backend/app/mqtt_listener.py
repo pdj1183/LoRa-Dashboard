@@ -7,7 +7,7 @@ from app.websocket_manager import broadcast_telemetry_to_ws
 from app.dynamodb import save_telemetry
 
 STOP = asyncio.Event()
-MQTT_TOPIC = 'lora/devices/+/telemetry'
+MQTT_TOPIC = "lora/devices/+/telemetry"
 MQTT_BROKER = os.getenv("MQTT_BROKER", "mqtt")
 
 client = MQTTClient("backend-sub")
@@ -26,7 +26,6 @@ def on_message(client, topic, payload, qos, properties):
         print(f"[mqtt_listener] Received telemetry from {device_id}: {msg}", flush=True)
 
         save_telemetry(device_id, msg)
-
 
         # Send to WebSocket clients (async context required)
         asyncio.create_task(broadcast_telemetry_to_ws(device_id, msg))
@@ -67,4 +66,3 @@ async def connect_and_loop():
     await STOP.wait()
 
     await client.disconnect()
-

@@ -11,6 +11,8 @@ reset=$(tput sgr0)
 START_BACKEND=true
 START_FRONTEND=true
 ESP_ONLY=false
+FAKE_DEVICES_COUNT=0
+
 
 # ESP32 flags
 ESP_ACTION_REQUESTED=false
@@ -43,13 +45,19 @@ while [[ "$#" -gt 0 ]]; do
         --port)
             ESP_PORT="$2"
             shift ;;
+        --fake-devices)
+            FAKE_DEVICES_COUNT="$2"
+            shift ;;
+
         *)
             echo "Unknown option: $1"
-            echo "Usage: ./setup.sh [--backend-only|--frontend-only|--esp-only] [--build] [--flash] [--monitor] [--port <path>]"
+            echo "Usage: ./setup.sh [--backend-only|--frontend-only|--esp-only] [--build] [--flash] [--monitor] [--port <path>] [--fake-devices <num>]"
             exit 1 ;;
     esac
     shift
 done
+
+echo "${cyan}FAKE_DEVICES_COUNT = $FAKE_DEVICES_COUNT${reset}"
 
 
 # Print selected modes
@@ -220,6 +228,12 @@ fi
         kill "$MQTT_SUB_PID" 2>/dev/null || true
     fi
 
+    if [ -n "$FAKE_PY_PID" ]; then
+        echo "${cyan}Stopping fake_device.py (PID=$FAKE_PY_PID)...${reset}"
+        kill "$FAKE_PY_PID" 2>/dev/null || true
+    fi
+
+
     echo "${green}Done. Clean exit.${reset}"
     exit 0
 }
@@ -234,10 +248,25 @@ if $START_BACKEND; then
     echo "${green}MQTT listener started (PID=$MQTT_SUB_PID).${reset}"
 fi
 
+# Fake Devices
+if [[ "$FAKE_DEVICES_COUNT" -gt 0 ]]; then
+    echo "${cyan}Starting $FAKE_DEVICES_COUNT fake device(s)...${reset}"
+
+    # Activate Python venv if needed (optional)
+    if [ -d ".venv" ]; then
+        source .venv/bin/activate
+    fi
+
+    python3 scripts/fake_device.py --count "$FAKE_DEVICES_COUNT" &
+    FAKE_PY_PID=$!
+    echo "${green}Fake devices running (PID=$FAKE_PY_PID)${reset}"
+fi
+
 # Tail logs
 if [ "${#SERVICES[@]}" -gt 0 ]; then
     echo
     echo "${cyan}Attaching to Docker logs — Ctrl+C to stop...${reset}"
     docker compose logs -f "${SERVICES[@]}"
 fi
+
 
