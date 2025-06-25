@@ -1,17 +1,20 @@
-ARG PYTHON_VERSION=3.11
-
-FROM python:${PYTHON_VERSION}-slim
+FROM python:3.13
 
 WORKDIR /app
 
-# Install any system dependencies (if needed)
-RUN apt-get update && apt-get install -y curl
+# Install debug tools (optional)
+RUN apt-get update && apt-get install -y \
+    iputils-ping \
+    dnsutils \
+    netcat-openbsd \
+ && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies — optional, edit as needed
-COPY ./requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
-COPY . .
+# Copy ONLY the app folder (so /app/app/ exists as expected)
+COPY app ./app
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
 

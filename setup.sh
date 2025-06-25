@@ -91,7 +91,7 @@ if [ "$ESP_ACTION_REQUESTED" = true ]; then
     fi
 fi
 
-
+ITERM_WINDOW_NAME="LoRa-IDF-Monitor"
 
 # Run ESP32 actions in iTerm
 run_idf_in_iterm() {
@@ -118,19 +118,24 @@ run_idf_in_iterm() {
     echo "${cyan}Launching ESP32 tasks in iTerm2...${reset}"
     ESP_COMMAND="cd $FIRMWARE_DIR && source \$HOME/esp/esp-idf/export.sh"
 
-    $ESP_BUILD   && ESP_COMMAND+=" && idf.py build"
+    $ESP_BUILD   && ESP_COMMAND+=" && idf.py -f build"
     $ESP_FLASH   && ESP_COMMAND+=" && idf.py -p $ESP_PORT flash"
     $ESP_MONITOR && ESP_COMMAND+=" && idf.py -p $ESP_PORT monitor"
-
-    /usr/bin/osascript <<EOF
+    
+    ITERM_WINDOW_ID=$(
+        /usr/bin/osascript <<EOF
     tell application "iTerm"
-    activate
-    set newWindow to (create window with default profile)
-    tell current session of newWindow
-    write text "$ESP_COMMAND"
-end tell
-end tell
+        activate
+        set newWindow to (create window with default profile)
+        set windowID to id of newWindow
+        tell current session of newWindow
+            write text "cd $FIRMWARE_DIR && source \$HOME/esp/esp-idf/export.sh $EXTRA && $ESP_COMMAND; exit"
+        end tell
+        return windowID
+    end tell
 EOF
+)
+
 }
 
 # Run ESP32 actions if asked
@@ -153,12 +158,12 @@ fi
 
 # Start Docker containers based on the mode
 SERVICES=()
-$START_BACKEND   && SERVICES+=(mqtt dynamodb)
+$START_BACKEND   && SERVICES+=(mqtt dynamodb backend)
 $START_FRONTEND && SERVICES+=(frontend)
 
 if [ "${#SERVICES[@]}" -gt 0 ]; then
     echo "${cyan}Starting Docker containers: ${SERVICES[*]}...${reset}"
-    docker compose up -d "${SERVICES[@]}"
+    docker compose up -d --build "${SERVICES[@]}"
 fi
 
 # Wait for DynamoDB, create table, run test
@@ -173,7 +178,7 @@ if $START_BACKEND; then
 
     TABLE_EXISTS=$(aws dynamodb list-tables \
         --endpoint-url http://localhost:8000 \
-        --region us-east-1 | grep -c '"Telemetry"')
+        --region us-west-1 | grep -c '"Telemetry"')
     if [ "$TABLE_EXISTS" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Telemetry'...${reset}"
         aws dynamodb create-table \
@@ -181,17 +186,31 @@ if $START_BACKEND; then
           --attribute-definitions AttributeName=device_id,AttributeType=S AttributeName=timestamp,AttributeType=N \
           --key-schema AttributeName=device_id,KeyType=HASH AttributeName=timestamp,KeyType=RANGE \
           --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-          --endpoint-url http://localhost:8000 --region us-east-1
+          --endpoint-url http://localhost:8000 --region us-west-1
     else
         echo "${green}DynamoDB table 'Telemetry' already exists.${reset}"
     fi
-
-    echo "${cyan}Running backend test (test_db.py)...${reset}"
-    python backend/test_db.py
 fi
 
 # Shutdown hook for cleanup
 shutdown() {
+    #Attempting to close iTerm2 ESP32 monitor window
+    if [ -n "$ITERM_WINDOW_ID" ]; then
+        echo "${cyan}Closing iTerm2 window (ID: $ITERM_WINDOW_ID)...${reset}"
+        /usr/bin/osascript <<EOF
+        tell application "iTerm"
+            try
+                repeat with w in windows
+                    if id of w is $ITERM_WINDOW_ID then
+                        close w
+                        exit repeat
+                    end if
+                end repeat
+            end try
+        end tell
+EOF
+fi
+
     echo
     echo "${cyan}Shutting down Docker services...${reset}"
     docker compose down
@@ -204,6 +223,7 @@ shutdown() {
     echo "${green}Done. Clean exit.${reset}"
     exit 0
 }
+
 trap shutdown INT
 
 # MQTT listener (if backend is running)
