@@ -1,10 +1,9 @@
 from fastapi import APIRouter
-from app.dynamodb import get_telemetry_items
-
+from app.dynamodb import get_db_telemetry
 router = APIRouter()
 
 @router.get("/telemetry")
-async def get_telemetry(device_id: str, start: int, end: int):
-    items = await get_telemetry_items(device_id, start, end)
+async def get_telemetry(device_id: str):
+    items = await get_db_telemetry(device_id)
     return {"data": items}
 

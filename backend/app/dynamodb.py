@@ -1,24 +1,33 @@
-import aioboto3
+# app/dynamodb.py
+
+from datetime import datetime
+from typing import Text
+import boto3
+from boto3.dynamodb.conditions import Key
 import os
 
-DYNAMODB_URL = os.getenv("DYNAMODB_URL", "http://localhost:8000")
-REGION = os.getenv("AWS_REGION", "us-west-1")
+dynamodb = boto3.resource(
+    'dynamodb',
+    endpoint_url=os.getenv('DYNAMODB_URL', 'http://localhost:8000'),
+    region_name=os.getenv('AWS_REGION', 'us-west-1'),
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+)
 
-session = aioboto3.Session()
+table = dynamodb.Table('Telemetry')
 
-async def get_telemetry_items(device_id: str, start_ts: int, end_ts: int):
-    async with session.resource('dynamodb', endpoint_url=DYNAMODB_URL, region_name=REGION) as dynamodb:
-        table = await dynamodb.Table("Telemetry")
-        response = await table.query(
-            KeyConditionExpression="device_id = :id AND #ts BETWEEN :start AND :end",
-            ExpressionAttributeValues={
-                ":id": device_id,
-                ":start": start_ts,
-                ":end": end_ts
-            },
-            ExpressionAttributeNames={
-                "#ts": "timestamp"
-            }
-        )
-        return response.get("Items", [])
+def save_telemetry(device_id, data):
+    item = {
+        'device_id': device_id,
+        'timestamp': int(datetime.utcnow().timestamp()),
+        **data
+    }
+    table.put_item(Item=item)
+    print(f"[DynamoDB] Saved to DynamoDB: {item}", flush=True)
+
+async def get_db_telemetry(device_id):
+    response = table.query(
+        KeyConditionExpression=Key('device_id').eq(device_id)
+    )
+    return response['Items']
 

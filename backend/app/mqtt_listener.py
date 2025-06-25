@@ -4,6 +4,7 @@ import os
 import signal
 from gmqtt import Client as MQTTClient
 from app.websocket_manager import broadcast_telemetry_to_ws
+from app.dynamodb import save_telemetry
 
 STOP = asyncio.Event()
 MQTT_TOPIC = 'lora/devices/+/telemetry'
@@ -23,6 +24,9 @@ def on_message(client, topic, payload, qos, properties):
         msg = json.loads(payload.decode())
         device_id = topic.split("/")[2]
         print(f"[mqtt_listener] Received telemetry from {device_id}: {msg}", flush=True)
+
+        save_telemetry(device_id, msg)
+
 
         # Send to WebSocket clients (async context required)
         asyncio.create_task(broadcast_telemetry_to_ws(device_id, msg))

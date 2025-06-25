@@ -7,9 +7,9 @@ from boto3.dynamodb.conditions import Key
 dynamodb = boto3.resource(
     'dynamodb',
     endpoint_url='http://localhost:8000',
-    region_name='us-east-1',
-    aws_access_key_id='fake',
-    aws_secret_access_key='fake'
+    region_name='us-west-1',
+    aws_access_key_id='pdj1183',
+    aws_secret_access_key='pdj1183'
 )
 
 table = dynamodb.Table('Telemetry')
