@@ -153,12 +153,12 @@ fi
 
 # Start Docker containers based on the mode
 SERVICES=()
-$START_BACKEND   && SERVICES+=(mqtt dynamodb)
+$START_BACKEND   && SERVICES+=(mqtt dynamodb backend)
 $START_FRONTEND && SERVICES+=(frontend)
 
 if [ "${#SERVICES[@]}" -gt 0 ]; then
     echo "${cyan}Starting Docker containers: ${SERVICES[*]}...${reset}"
-    docker compose up -d "${SERVICES[@]}"
+    docker compose up -d --build "${SERVICES[@]}"
 fi
 
 # Wait for DynamoDB, create table, run test
@@ -173,7 +173,7 @@ if $START_BACKEND; then
 
     TABLE_EXISTS=$(aws dynamodb list-tables \
         --endpoint-url http://localhost:8000 \
-        --region us-east-1 | grep -c '"Telemetry"')
+        --region us-west-1 | grep -c '"Telemetry"')
     if [ "$TABLE_EXISTS" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Telemetry'...${reset}"
         aws dynamodb create-table \
@@ -181,7 +181,7 @@ if $START_BACKEND; then
           --attribute-definitions AttributeName=device_id,AttributeType=S AttributeName=timestamp,AttributeType=N \
           --key-schema AttributeName=device_id,KeyType=HASH AttributeName=timestamp,KeyType=RANGE \
           --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-          --endpoint-url http://localhost:8000 --region us-east-1
+          --endpoint-url http://localhost:8000 --region us-west-1
     else
         echo "${green}DynamoDB table 'Telemetry' already exists.${reset}"
     fi

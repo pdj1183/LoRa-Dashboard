@@ -1,4 +1,9 @@
 fastapi
-uvicorn
-boto3
-
+uvicorn[standard]
+boto3==1.34.106
+aioboto3
+pydantic
+websockets
+python-dotenv
+gmqtt==0.6.11
+jmespath==1.0.1

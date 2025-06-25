@@ -24,6 +24,21 @@ services:
       ports:
         - "8000:8000"
   
+    backend:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      volumes:
+        - ./backend:/app
+      environment:
+        - MQTT_BROKER=mqtt
+        - AWS_ACCESS_KEY_ID=test
+        - AWS_SECRET_ACCESS_KEY=test
+        - AWS_REGION=us-west-1
+        - DYNAMODB_URL=http://dynamodb:8000
+      ports:
+        - "8001:8001"
+
 #    localstack:
 #        image: localstack/localstack
 #        ports:
@@ -32,17 +47,4 @@ services:
 #            - SERVICES=iot,dynamodb
 #            - DEFAULT_REGION=us-east-1
 #
-#    backend:
-#        build:
-#            context: ./backend
-#            dockerfile: Dockerfile
-#            args:
-#                PYTHON_VERSION: "3.11"
-#        volumes:
-#            - ./backend:/app
-#        environment:
-#            - AWS_ENDPOINT_URL=http://localstack:4566
-#            - DYNAMODB_URL=http://dynamodb:8000
-#        ports:
-#            - "8001:8001"
 
