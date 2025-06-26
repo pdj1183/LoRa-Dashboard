@@ -38,13 +38,3 @@ services:
         - DYNAMODB_URL=http://dynamodb:8000
       ports:
         - "8001:8001"
-
-#    localstack:
-#        image: localstack/localstack
-#        ports:
-#            - "4566:4566"
-#        environment:
-#            - SERVICES=iot,dynamodb
-#            - DEFAULT_REGION=us-east-1
-#
-
