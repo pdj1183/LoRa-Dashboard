@@ -2,10 +2,11 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { getDevices, getTelemetry, getAllTelemetry, getAllTelemetryChart } from '../api/telemetry';
 import useTelemetrySocket from '../hooks/useTelemetrySocket';
 import DeviceSelector from './DeviceSelector';
-import { SynchronizedCharts, TelemetryChart } from "./TelemetryChart.jsx"
-import LiveStats from './LiveStats';
+import { StackedTelemetryChart, SynchronizedCharts, TelemetryChart } from "./TelemetryChart.jsx"
+import LiveStats, { LiveDataContext } from './LiveStats';
 import { COLORS } from '../utils/colors.js';
 import { dateStringToMs } from '../utils/format.js';
+import DateSelector from './DateSelector.jsx';
 
 function getTodayDateString() {
     return new Date().toISOString().slice(0, 10);
@@ -25,6 +26,8 @@ export default function Dashboard() {
     const [colorMap, setColorMap] = useState({});
     const [startDate, setStartDate] = useState(getWeekAgoDateString());
     const [endDate, setEndDate] = useState(getTodayDateString());
+    const [liveDataLog, setLiveDataLog] = useState([]);
+    const addLiveData = msg => setLiveDataLog(prev => [...prev, msg]);
 
     // Fetch list of devices
     useEffect(() => {
@@ -74,33 +77,38 @@ export default function Dashboard() {
 
     const handleMessageRef = useRef();
     handleMessageRef.current = (telemetry) => {
-        console.log("Handle Message")
         setData(prev => {
             if (deviceId) {
-                return [...prev, telemetry];
+                const updated = [...prev, telemetry]
+                return updated;
             } else {
-                console.log("UPDATE")
-                const last = prev[prev.length - 1];
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
                 if (last && telemetry.timestamp === last.timestamp) {
-                    const updated = [...prev];
+                    // Update value for this device only
                     updated[updated.length - 1] = {
                         ...last,
                         [telemetry.device_id]: telemetry.temperature,
                     };
+                    // Ensure all device keys exist
+                    devices.forEach(id => {
+                        if (!(id in updated[updated.length - 1])) {
+                            updated[updated.length - 1][id] = null;
+                        }
+                    });
                     return updated;
                 } else {
-                    console.log("APPEND")
-                    const updated = [
-                        ...prev,
-                        {
-                            timestamp: telemetry.timestamp,
-                            [telemetry.device_id]: telemetry.temperature,
-                        }
-                    ];
-                    return updated;
+                    // New timestamp row
+                    // Ensure all device keys exist
+                    const newPoint = { timestamp: telemetry.timestamp };
+                    devices.forEach(id => {
+                        newPoint[id] = id === telemetry.device_id ? telemetry.temperature : null;
+                    });
+                    return [...prev, newPoint];
                 }
             }
         });
+        addLiveData(JSON.stringify(telemetry));
     };
 
     // Stable wrapper for useTelemetrySocket:
@@ -111,7 +119,6 @@ export default function Dashboard() {
 
     useTelemetrySocket(deviceId, stableHandleMessage);
 
-
     return (
         <div>
             <DeviceSelector
@@ -119,25 +126,19 @@ export default function Dashboard() {
                 value={deviceId}
                 onChange={setDeviceId}
             />
+            <DateSelector startValue={startDate} startOnChange={setStartDate} endValue={endDate} endOnChange={setEndDate} />
             <div>
-                <div style={{ marginBottom: 16 }}>
-                    <label>
-                        Start Date:
-                        <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-                    </label>
-                    <label style={{ marginLeft: 8 }}>
-                        End Date:
-                        <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-                    </label>
-                </div>
-            </div>
-            <>
                 {deviceId
                     ? <TelemetryChart data={data} deviceId={deviceId} deviceIds={devices} classname="chart-container" />
-                    : <SynchronizedCharts data={data} deviceIds={devices} />
+                    : <StackedTelemetryChart data={data} deviceIds={devices} classname="chart-container" />
 
                 }
-            </>
+            </div>
+            <div>
+                <LiveDataContext.Provider value={liveDataLog}>
+                    <LiveStats />
+                </LiveDataContext.Provider>
+            </div>
         </div>
     );
 }

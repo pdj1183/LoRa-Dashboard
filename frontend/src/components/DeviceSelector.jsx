@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export default function DeviceSelector({ devices, value, onChange }) {
     return (
@@ -15,4 +15,3 @@ export default function DeviceSelector({ devices, value, onChange }) {
         </div>
     );
 }
-

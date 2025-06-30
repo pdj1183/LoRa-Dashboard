@@ -1,14 +1,14 @@
-import React from 'react';
-import { formatTime } from '../utils/format';
+import React, { useState, createContext, useContext } from 'react';
 
-export default function LiveStats({ latest }) {
-  return (
-    <div style={{ marginBottom: '1rem' }}>
-      <h2>Live Reading</h2>
-      <p>Temperature: {latest.temperature}°C</p>
-      <p>Uptime: {latest.uptime_ms} ms</p>
-      <p>Time: {formatTime(latest.timestamp)}</p>
-    </div>
-  );
+export const LiveDataContext = createContext();
+
+export default function LiveStats() {
+    const dataLog = useContext(LiveDataContext);
+    return (
+        <div>
+            {dataLog.map((msg, idx) => (
+                <h1 key={idx}>{msg}</h1>
+            ))}
+        </div>
+    );
 }
-

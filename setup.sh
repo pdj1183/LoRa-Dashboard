@@ -273,7 +273,7 @@ if [[ "$FAKE_DEVICES_COUNT" -gt 0 ]]; then
         source .venv/bin/activate
     fi
 
-    python3 scripts/fake_device.py --count "$FAKE_DEVICES_COUNT" &
+    python3 scripts/fake_device.py --count "$FAKE_DEVICES_COUNT" --interval 15 &
     FAKE_PY_PID=$!
     echo "${green}Fake devices running (PID=$FAKE_PY_PID)${reset}"
 fi

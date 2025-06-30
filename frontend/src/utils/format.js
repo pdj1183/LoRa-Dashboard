@@ -5,10 +5,14 @@ export function formatTime(timestamp) {
 
 export function dateStringToMs(dateString, endOfDay = false) {
     if (!dateString) return null;
-    const date = new Date(dateString);
+
+    // Parse as UTC instead of local time
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
     if (endOfDay) {
-        // Set to the end of day: 23:59:59.999
-        date.setHours(23, 59, 59, 999);
+        date.setUTCHours(23, 59, 59, 999);
     }
+
     return date.getTime();
 }
