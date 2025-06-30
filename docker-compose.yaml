@@ -32,8 +32,8 @@ services:
         - ./backend:/app
       environment:
         - MQTT_BROKER=mqtt
-        - AWS_ACCESS_KEY_ID=test
-        - AWS_SECRET_ACCESS_KEY=test
+        - AWS_ACCESS_KEY_ID=pdj1183
+        - AWS_SECRET_ACCESS_KEY=pdj1183
         - AWS_REGION=us-west-1
         - DYNAMODB_URL=http://dynamodb:8000
       ports:

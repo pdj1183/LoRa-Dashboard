@@ -1,9 +1,11 @@
 from datetime import datetime
+from app.chart_helper import format_data
 import boto3
 from boto3.dynamodb.conditions import Key
 import os
 from decimal import Decimal
 from collections import defaultdict
+from typing import Optional
 
 
 dynamodb = boto3.resource(
@@ -44,11 +46,6 @@ def update_device_entry(device_id: str):
     print(f"[DynamoDB] Updated Devices table: {item}", flush=True)
 
 
-async def get_db_telemetry(device_id):
-    response = table.query(KeyConditionExpression=Key("device_id").eq(device_id))
-    return response["Items"]
-
-
 def get_all_telemetry():
     response = table.scan()
     items = response["Items"]
@@ -59,6 +56,36 @@ def get_all_telemetry():
         grouped[device_id].append(item)
 
     return grouped
+
+
+async def get_db_telemetry(device_id, start_ts=None, end_ts=None):
+    key_expr = Key("device_id").eq(device_id)
+    if start_ts and end_ts:
+        key_expr &= Key("timestamp").between(start_ts, end_ts)
+    elif start_ts:
+        key_expr &= Key("timestamp").gte(start_ts)
+    elif end_ts:
+        key_expr &= Key("timestamp").lte(end_ts)
+    response = table.query(KeyConditionExpression=key_expr)
+    return response["Items"]
+
+
+def get_all_telemetry_chart(
+    start_ts: Optional[int] = None, end_ts: Optional[int] = None
+):
+    response = table.scan()
+    items = response["Items"]
+    # Filter items by start_ts and end_ts
+    if start_ts or end_ts:
+        items = [
+            item
+            for item in items
+            if (not start_ts or int(item["timestamp"]) >= start_ts)
+            and (not end_ts or int(item["timestamp"]) <= end_ts)
+        ]
+    grouped = format_data(items)
+    sorted_rows = [grouped[t] for t in sorted(grouped.keys())]
+    return sorted_rows
 
 
 def list_device_ids():
