@@ -5,11 +5,22 @@ import time
 import threading
 from datetime import datetime
 import paho.mqtt.publish as publish
-
 import socket
 
 BROKER = "localhost"
 BASE_TOPIC = "lora/devices/{device_id}/telemetry"
+
+fixed_device_ids = [
+    "B63E1D54B76D",
+    "5D8DADF1DA9F",
+    "0A9EBB0F3B32",
+    "D7C8474C06CA",
+    "FD0EBDA8D925",
+]
+
+
+def random_device_id():
+    return "".join(random.choices("0123456789ABCDEF", k=12))
 
 
 def run_fake_device(device_id: str, interval: float):
@@ -58,8 +69,11 @@ def main():
     print(f"Starting {args.count} fake devices, publishing every {args.interval}s...\n")
 
     threads = []
-    for i in range(1, args.count + 1):
-        device_id = f"FAKE_DEVICE_{i}"
+    for i in range(args.count):
+        if i < len(fixed_device_ids):
+            device_id = fixed_device_ids[i]
+        else:
+            device_id = random_device_id()
         t = threading.Thread(
             target=run_fake_device, args=(device_id, args.interval), daemon=True
         )

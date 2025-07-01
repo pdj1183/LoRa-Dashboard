@@ -1,33 +1,42 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { getDevices, getTelemetry, getAllTelemetry, getAllTelemetryChart } from '../api/telemetry';
-import useTelemetrySocket from '../hooks/useTelemetrySocket';
-import DeviceSelector from './DeviceSelector';
-import { StackedTelemetryChart, SynchronizedCharts, TelemetryChart } from "./TelemetryChart.jsx"
-import LiveStats, { LiveDataContext } from './LiveStats';
-import { COLORS } from '../utils/colors.js';
-import { dateStringToMs } from '../utils/format.js';
-import DateSelector from './DateSelector.jsx';
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import {
+    getDevices,
+    getTelemetry,
+    getAllTelemetry,
+    getAllTelemetryChart,
+} from "../api/telemetry";
+import useTelemetrySocket from "../hooks/useTelemetrySocket";
+import DeviceSelector from "./DeviceSelector";
+import {
+    StackedTelemetryChart,
+    SynchronizedCharts,
+    TelemetryChart,
+} from "./TelemetryChart.jsx";
+import LiveStats, { LiveDataContext } from "./LiveStats";
+import { COLORS } from "../utils/colors-data.js";
+import { dateStringToMs } from "../utils/format.js";
+import DateSelector from "./DateSelector.jsx";
 
 function getTodayDateString() {
     return new Date().toISOString().slice(0, 10);
 }
-function getWeekAgoDateString() {
+function getYesterdayDateString() {
     const d = new Date();
-    d.setDate(d.getDate() - 7);
+    d.setDate(d.getDate() - 1);
     return d.toISOString().slice(0, 10);
 }
 
 export default function Dashboard() {
-    const [deviceId, setDeviceId] = useState('');
+    const [deviceId, setDeviceId] = useState("");
     const [devices, setDevices] = useState([]);
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [colorMap, setColorMap] = useState({});
-    const [startDate, setStartDate] = useState(getWeekAgoDateString());
+    const [startDate, setStartDate] = useState(getYesterdayDateString());
     const [endDate, setEndDate] = useState(getTodayDateString());
     const [liveDataLog, setLiveDataLog] = useState([]);
-    const addLiveData = msg => setLiveDataLog(prev => [...prev, msg]);
+    const addLiveData = (msg) => setLiveDataLog((prev) => [...prev, msg]);
 
     // Fetch list of devices
     useEffect(() => {
@@ -42,14 +51,13 @@ export default function Dashboard() {
                     map[id] = COLORS[i % COLORS.length];
                 });
                 setColorMap(map);
-            };
+            }
             fetchColors();
-            console.log(colorMap)
-        }
+            console.log(colorMap);
+        };
     }, [devices]);
 
-
-    // Fetch historical data 
+    // Fetch historical data
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -70,16 +78,15 @@ export default function Dashboard() {
         fetchData();
     }, [deviceId, startDate, endDate]);
 
-
     // Handle incoming WebSocket messages (live telemetry)
     const dataRef = useRef();
     dataRef.current = data;
 
     const handleMessageRef = useRef();
     handleMessageRef.current = (telemetry) => {
-        setData(prev => {
+        setData((prev) => {
             if (deviceId) {
-                const updated = [...prev, telemetry]
+                const updated = [...prev, telemetry];
                 return updated;
             } else {
                 const updated = [...prev];
@@ -91,7 +98,7 @@ export default function Dashboard() {
                         [telemetry.device_id]: telemetry.temperature,
                     };
                     // Ensure all device keys exist
-                    devices.forEach(id => {
+                    devices.forEach((id) => {
                         if (!(id in updated[updated.length - 1])) {
                             updated[updated.length - 1][id] = null;
                         }
@@ -101,8 +108,11 @@ export default function Dashboard() {
                     // New timestamp row
                     // Ensure all device keys exist
                     const newPoint = { timestamp: telemetry.timestamp };
-                    devices.forEach(id => {
-                        newPoint[id] = id === telemetry.device_id ? telemetry.temperature : null;
+                    devices.forEach((id) => {
+                        newPoint[id] =
+                            id === telemetry.device_id
+                                ? telemetry.temperature
+                                : null;
                     });
                     return [...prev, newPoint];
                 }
@@ -114,32 +124,46 @@ export default function Dashboard() {
     // Stable wrapper for useTelemetrySocket:
     const stableHandleMessage = useCallback(
         (telemetry) => handleMessageRef.current(telemetry),
-        []
+        [],
     );
 
     useTelemetrySocket(deviceId, stableHandleMessage);
 
     return (
-        <div>
+        <div className="dashboard">
             <DeviceSelector
                 devices={devices}
                 value={deviceId}
                 onChange={setDeviceId}
             />
-            <DateSelector startValue={startDate} startOnChange={setStartDate} endValue={endDate} endOnChange={setEndDate} />
-            <div>
-                {deviceId
-                    ? <TelemetryChart data={data} deviceId={deviceId} deviceIds={devices} classname="chart-container" />
-                    : <StackedTelemetryChart data={data} deviceIds={devices} classname="chart-container" />
+            <DateSelector
+                startValue={startDate}
+                startOnChange={setStartDate}
+                endValue={endDate}
+                endOnChange={setEndDate}
+            />
+            <div className="dataView">
+                <div className="chart-container">
+                    {deviceId ? (
+                        <TelemetryChart
+                            data={data}
+                            deviceId={deviceId}
+                            deviceIds={devices}
 
-                }
-            </div>
-            <div>
-                <LiveDataContext.Provider value={liveDataLog}>
-                    <LiveStats />
-                </LiveDataContext.Provider>
+                        />
+                    ) : (
+                        <StackedTelemetryChart
+                            data={data}
+                            deviceIds={devices}
+                        />
+                    )}
+                </div>
+                <div>
+                    <LiveDataContext.Provider value={liveDataLog}>
+                        <LiveStats devices={devices} />
+                    </LiveDataContext.Provider>
+                </div>
             </div>
         </div>
     );
 }
-
