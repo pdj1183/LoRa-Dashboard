@@ -1,0 +1,48 @@
+@import './colors-generated.css';
+
+.dashboard {}
+
+.dataView {
+    display: flex;
+    flex-direction: row;
+}
+
+.chart-container {
+    height: 400px;
+    width: 100%;
+    padding: 7px;
+}
+
+.statBox {
+    display: flex;
+    flex-direction: column-reverse;
+    justify-content: flex-end;
+    width: 15vw;
+    height: 85vh;
+    padding: 7px;
+    overflow: auto;
+    border: solid 1px black;
+    border-radius: 7px;
+}
+
+#anchor{
+    overflow: auto;
+}
+
+.liveStats {
+    top: -100px;
+    position: relative;
+}
+
+.statline {
+    margin: 5px 0;
+    text-align: left;
+    border-radius: 3px;
+    background-color: rgba(100, 100, 100, .2);
+    padding: 7px;
+}
+
+.deviceLine * {
+    display: inline;
+}
+

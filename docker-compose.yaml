@@ -32,19 +32,9 @@ services:
         - ./backend:/app
       environment:
         - MQTT_BROKER=mqtt
-        - AWS_ACCESS_KEY_ID=test
-        - AWS_SECRET_ACCESS_KEY=test
+        - AWS_ACCESS_KEY_ID=pdj1183
+        - AWS_SECRET_ACCESS_KEY=pdj1183
         - AWS_REGION=us-west-1
         - DYNAMODB_URL=http://dynamodb:8000
       ports:
         - "8001:8001"
-
-#    localstack:
-#        image: localstack/localstack
-#        ports:
-#            - "4566:4566"
-#        environment:
-#            - SERVICES=iot,dynamodb
-#            - DEFAULT_REGION=us-east-1
-#
-

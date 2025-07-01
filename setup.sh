@@ -184,10 +184,10 @@ if $START_BACKEND; then
     echo
     echo "${green}DynamoDB is up.${reset}"
 
-    TABLE_EXISTS=$(aws dynamodb list-tables \
+    TELEMETRY_EXISTS=$(aws dynamodb list-tables \
         --endpoint-url http://localhost:8000 \
         --region us-west-1 | grep -c '"Telemetry"')
-    if [ "$TABLE_EXISTS" -eq 0 ]; then
+    if [ "$TELEMETRY_EXISTS" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Telemetry'...${reset}"
         aws dynamodb create-table \
           --table-name Telemetry \
@@ -197,6 +197,22 @@ if $START_BACKEND; then
           --endpoint-url http://localhost:8000 --region us-west-1
     else
         echo "${green}DynamoDB table 'Telemetry' already exists.${reset}"
+    fi
+    DEVICES_EXIST=$(aws dynamodb list-tables \
+        --endpoint-url http://localhost:8000 \
+        --region us-west-1 | grep -c '"Devices"')
+    if [ "$DEVICES_EXIST" -eq 0 ]; then
+        echo "${cyan}Creating DynamoDB table 'Devices'...${reset}"
+        aws dynamodb create-table \
+          --table-name Devices \
+          --attribute-definitions AttributeName=device_id,AttributeType=S \
+          --key-schema AttributeName=device_id,KeyType=HASH \
+          --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+          --endpoint-url http://localhost:8000 \
+          --region us-west-1
+
+    else
+        echo "${green}DynamoDB table 'Devices' already exists.${reset}"
     fi
 fi
 
@@ -257,7 +273,7 @@ if [[ "$FAKE_DEVICES_COUNT" -gt 0 ]]; then
         source .venv/bin/activate
     fi
 
-    python3 scripts/fake_device.py --count "$FAKE_DEVICES_COUNT" &
+    python3 scripts/fake_device.py --count "$FAKE_DEVICES_COUNT" --interval 15 &
     FAKE_PY_PID=$!
     echo "${green}Fake devices running (PID=$FAKE_PY_PID)${reset}"
 fi
