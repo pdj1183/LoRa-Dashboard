@@ -68,3 +68,43 @@ On first run, you will be prompted to enter WiFi credentials (for firmware) and 
 
 To stop and clean up, press Ctrl+C.
 
+---
+
+## Extras/Scripts 
+
+###  Clear Table
+**What it does:**
+- Deletes all items from both tables.
+- Seeds 5 random device IDs in the `Devices` table.
+- Seeds 30 days (hourly, per device) of random telemetry data in the `Telemetry` table.
+
+**Usage:**
+```sh
+python scripts/clear_table.py
+```
+
+**Requirements:**
+- Python 3
+- `boto3`
+- Local DynamoDB instance running
+
+### Fake Device
+**What it does:**
+- Simulates one or more devices (with custom or random IDs).
+- Customizable publish interval for each device.
+- Runs each simulated device in its own thread.
+- Displays output and handles errors gracefully.
+
+**Usage:**
+```sh
+python fake_device.py --count 3 --interval 1.5
+```
+- `--count`: Number of devices to simulate (default: 1)
+- `--interval`: Message publish interval per device, in seconds (default: 2.0)
+
+**Requirements:**
+- Python 3
+- `paho-mqtt`
+
+**Notes:**
+- By default, connects to MQTT broker at `localhost`.
