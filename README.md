@@ -9,7 +9,7 @@ Use LoRa compatible Esp32's to send sensor data through AWS IoT core to a React 
 - [ ] [Frontend](docs/frontend.md): React JS
 
 <div align="center">
-    <video controls muted></video>
+    <video controls muted src="https://github.com/user-attachments/assets/97756a8a-2db8-45b8-b298-19100d9e1012"></video>
 </div>
 
 
