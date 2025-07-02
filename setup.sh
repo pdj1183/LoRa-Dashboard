@@ -246,30 +246,34 @@ if $START_BACKEND; then
 
     TELEMETRY_EXISTS=$(aws dynamodb list-tables \
         --endpoint-url http://localhost:8000 \
-        --region us-west-1 | grep -c '"Telemetry"')
+        --region us-west-1 | grep -c '"Telemetry"' | tr -d '[:space:]')
+    echo "TELEMETRY_EXISTS='$TELEMETRY_EXISTS'"
     if [ "$TELEMETRY_EXISTS" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Telemetry'...${reset}"
-        aws dynamodb create-table \
+        CREATE_OUTPUT=$(aws dynamodb create-table \
             --table-name Telemetry \
             --attribute-definitions AttributeName=device_id,AttributeType=S AttributeName=timestamp,AttributeType=N \
             --key-schema AttributeName=device_id,KeyType=HASH AttributeName=timestamp,KeyType=RANGE \
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-            --endpoint-url http://localhost:8000 --region us-west-1
+            --endpoint-url http://localhost:8000 --region us-west-1 2>1)
+        echo "${cyan}AWS create-table output: $CREATE_OUTPUT${reset}"
     else
         echo "${green}DynamoDB table 'Telemetry' already exists.${reset}"
     fi
     DEVICES_EXIST=$(aws dynamodb list-tables \
         --endpoint-url http://localhost:8000 \
-        --region us-west-1 | grep -c '"Devices"')
+        --region us-west-1 | grep -c '"Devices"' | tr -d '[:space:]')
+    echo "DEVICES_EXIST='$DEVICES_EXIST'"
     if [ "$DEVICES_EXIST" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Devices'...${reset}"
-        aws dynamodb create-table \
+        CREATE_OUTPUT=$(aws dynamodb create-table \
             --table-name Devices \
             --attribute-definitions AttributeName=device_id,AttributeType=S \
             --key-schema AttributeName=device_id,KeyType=HASH \
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
             --endpoint-url http://localhost:8000 \
-            --region us-west-1
+            --region us-west-1 2>1)
+        echo "${cyan}AWS create-table output: $CREATE_OUTPUT${reset}"
     else
         echo "${green}DynamoDB table 'Devices' already exists.${reset}"
     fi
