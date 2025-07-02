@@ -91,7 +91,7 @@ if [ ! -f "$ENV_FILE" ]; then
     read -p "Enter DynamoDB endpoint [${default_endpoint}]: " endpoint
     endpoint=${endpoint:-$default_endpoint}
     read -p "Enter MQTT_BROKER [${default_mqtt}]: " mqtt
-    mqtt=${mqtt:-$defaultmqtt}
+    mqtt=${mqtt:-$default_mqtt}
 
     cat > "$ENV_FILE" <<EOF
 AWS_REGION=$region
