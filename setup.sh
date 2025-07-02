@@ -13,7 +13,6 @@ START_FRONTEND=true
 ESP_ONLY=false
 FAKE_DEVICES_COUNT=0
 
-
 # ESP32 flags
 ESP_ACTION_REQUESTED=false
 ESP_BUILD=false
@@ -48,7 +47,6 @@ while [[ "$#" -gt 0 ]]; do
         --fake-devices)
             FAKE_DEVICES_COUNT="$2"
             shift ;;
-
         *)
             echo "Unknown option: $1"
             echo "Usage: ./setup.sh [--backend-only|--frontend-only|--esp-only] [--build] [--flash] [--monitor] [--port <path>] [--fake-devices <num>]"
@@ -57,8 +55,55 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-echo "${cyan}FAKE_DEVICES_COUNT = $FAKE_DEVICES_COUNT${reset}"
+# Prompt for secrets.cmake
+SECRETS_FILE="firmware/include/secrets.cmake"
+if [ ! -f "$SECRETS_FILE" ]; then
+    mkdir -p firmware/include
+    default_ssid="SSID"
+    default_pwd="PASSWORD"
+    read -p "Enter WiFi SSID [${default_ssid}]: " ssid
+    ssid=${ssid:-$default_ssid}
+    read -p "Enter WiFi PASSWORD [${default_pwd}]: " pwd
+    pwd=${pwd:-$default_pwd}
+    cat > "$SECRETS_FILE" <<EOF
+set(WIFI_SSID "\"$ssid\"")
+set(WIFI_PASSWORD "\"$pwd\"")
+EOF
+    echo "${green}Created $SECRETS_FILE with your WiFi credentials.${reset}"
+fi
 
+# Prompt for backend/.env
+ENV_FILE="backend/.env"
+if [ ! -f "$ENV_FILE" ]; then
+    mkdir -p backend
+    default_region="us-west-1"
+    default_key="your_access_key"
+    default_secret="your_secret_key"
+    default_endpoint="http://localhost:8000"
+    default_mqtt="mqtt"
+
+    read -p "Enter AWS Region [${default_region}]: " region
+    region=${region:-$default_region}
+    read -p "Enter AWS Access Key ID [${default_key}]: " keyid
+    keyid=${keyid:-$default_key}
+    read -p "Enter AWS Secret Access Key [${default_secret}]: " accesskey
+    accesskey=${accesskey:-$default_secret}
+    read -p "Enter DynamoDB endpoint [${default_endpoint}]: " endpoint
+    endpoint=${endpoint:-$default_endpoint}
+    read -p "Enter MQTT_BROKER [${default_mqtt}]: " mqtt
+    mqtt=${mqtt:-$defaultmqtt}
+
+    cat > "$ENV_FILE" <<EOF
+AWS_REGION=$region
+AWS_ACCESS_KEY_ID=$keyid
+AWS_SECRET_ACCESS_KEY=$accesskey
+DYNAMODB_ENDPOINT=$endpoint
+MQTT_BROKER=$mqtt
+EOF
+    echo "${green}Created $ENV_FILE with configured AWS/DynamoDB info.${reset}"
+fi
+
+echo "${cyan}FAKE_DEVICES_COUNT = $FAKE_DEVICES_COUNT${reset}"
 
 # Print selected modes
 MODE_STRING=""
@@ -82,13 +127,11 @@ for cmd in docker python3 pip npm aws; do check_command $cmd; done
 ESP_IDF_READY=false
 
 if [ "$ESP_ACTION_REQUESTED" = true ]; then
-    if command idf.py -v &> /dev/null; then
+    if command -v idf.py &> /dev/null; then
         ESP_IDF_READY=true
     elif [ -f "$HOME/esp/esp-idf/export.sh" ]; then
         echo "${cyan}Sourcing ESP-IDF environment...${reset}"
-        # Source export.sh (enables idf.py and related tools)
         . "$HOME/esp/esp-idf/export.sh"
-        # Re-check idf.py now
         if command -v idf.py &> /dev/null; then
             ESP_IDF_READY=true
         else
@@ -99,56 +142,41 @@ if [ "$ESP_ACTION_REQUESTED" = true ]; then
     fi
 fi
 
-ITERM_WINDOW_NAME="LoRa-IDF-Monitor"
-
-# Run ESP32 actions in iTerm
-run_idf_in_iterm() {
-    FIRMWARE_DIR="$(pwd)/firmware"
-    if [ ! -d "$FIRMWARE_DIR" ]; then
-        echo "${red}Firmware directory not found: $FIRMWARE_DIR${reset}"
-        return
+# ESP32 Serial Port Detection (cross-platform)
+detect_esp_port() {
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        PORT=$(ls /dev/tty.usb* 2>/dev/null | head -n 1)
+    elif [[ "$(uname -s)" == "Linux" ]]; then
+        PORT=$(ls /dev/ttyUSB* /dev/ttyACM* 2>/dev/null | head -n 1)
+    elif [[ "$(uname -s)" == "MINGW"* || "$(uname -s)" == "CYGWIN"* || "$(uname -s)" == "MSYS_NT"* ]]; then
+        # For git-bash or cygwin on windows
+        PORT=$(ls /dev/ttyS* /dev/ttyUSB* 2>/dev/null | head -n 1)
+        # User may need to provide --port "COMx"
     fi
-
-    if [ -z "$ESP_PORT" ]; then
-        ESP_PORT=$(ls /dev/tty.usb* 2>/dev/null | head -n 1)
-    fi
-
-    if [ -z "$ESP_PORT" ]; then
-        echo "${cyan}No ESP32 device detected (no /dev/tty.usb* found). Skipping ESP32 actions.${reset}"
-        return
-    fi
-
-    if ! $ESP_IDF_READY; then
-        echo "${red}ESP-IDF not found or not sourced correctly — cannot run idf.py.${reset}"
-        return
-    fi
-
-    echo "${cyan}Launching ESP32 tasks in iTerm2...${reset}"
-    ESP_COMMAND="cd $FIRMWARE_DIR && source \$HOME/esp/esp-idf/export.sh"
-
-    $ESP_BUILD   && ESP_COMMAND+=" && idf.py -f build"
-    $ESP_FLASH   && ESP_COMMAND+=" && idf.py -p $ESP_PORT flash"
-    $ESP_MONITOR && ESP_COMMAND+=" && idf.py -p $ESP_PORT monitor"
-    
-    ITERM_WINDOW_ID=$(
-        /usr/bin/osascript <<EOF
-    tell application "iTerm"
-        activate
-        set newWindow to (create window with default profile)
-        set windowID to id of newWindow
-        tell current session of newWindow
-            write text "cd $FIRMWARE_DIR && source \$HOME/esp/esp-idf/export.sh $EXTRA && $ESP_COMMAND; exit"
-        end tell
-        return windowID
-    end tell
-EOF
-)
-
+    echo "$PORT"
 }
 
 # Run ESP32 actions if asked
 if $ESP_ACTION_REQUESTED && $ESP_IDF_READY; then
-    run_idf_in_iterm
+    FIRMWARE_DIR="$(pwd)/firmware"
+    if [ ! -d "$FIRMWARE_DIR" ]; then
+        echo "${red}Firmware directory not found: $FIRMWARE_DIR${reset}"
+    else
+        if [ -z "$ESP_PORT" ]; then
+            ESP_PORT=$(detect_esp_port)
+        fi
+
+        if [ -z "$ESP_PORT" ]; then
+            echo "${cyan}No ESP32 device detected (no serial port found). Skipping ESP32 actions.${reset}"
+        else
+            cd "$FIRMWARE_DIR"
+            [ -f "$HOME/esp/esp-idf/export.sh" ] && source "$HOME/esp/esp-idf/export.sh"
+            $ESP_BUILD   && idf.py -f build
+            $ESP_FLASH   && idf.py -p "$ESP_PORT" flash
+            $ESP_MONITOR && idf.py -p "$ESP_PORT" monitor
+            cd - > /dev/null
+        fi
+    fi
 fi
 
 # Setup backend: Python deps + Docker
@@ -157,7 +185,6 @@ if $START_BACKEND; then
         echo "${cyan}Creating Python virtualenv...${reset}"
         python3 -m venv .venv
     fi
-
     echo "${cyan}Activating venv and installing Python dependencies...${reset}"
     source .venv/bin/activate
     pip install --upgrade pip
@@ -190,11 +217,11 @@ if $START_BACKEND; then
     if [ "$TELEMETRY_EXISTS" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Telemetry'...${reset}"
         aws dynamodb create-table \
-          --table-name Telemetry \
-          --attribute-definitions AttributeName=device_id,AttributeType=S AttributeName=timestamp,AttributeType=N \
-          --key-schema AttributeName=device_id,KeyType=HASH AttributeName=timestamp,KeyType=RANGE \
-          --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-          --endpoint-url http://localhost:8000 --region us-west-1
+            --table-name Telemetry \
+            --attribute-definitions AttributeName=device_id,AttributeType=S AttributeName=timestamp,AttributeType=N \
+            --key-schema AttributeName=device_id,KeyType=HASH AttributeName=timestamp,KeyType=RANGE \
+            --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+            --endpoint-url http://localhost:8000 --region us-west-1
     else
         echo "${green}DynamoDB table 'Telemetry' already exists.${reset}"
     fi
@@ -204,37 +231,19 @@ if $START_BACKEND; then
     if [ "$DEVICES_EXIST" -eq 0 ]; then
         echo "${cyan}Creating DynamoDB table 'Devices'...${reset}"
         aws dynamodb create-table \
-          --table-name Devices \
-          --attribute-definitions AttributeName=device_id,AttributeType=S \
-          --key-schema AttributeName=device_id,KeyType=HASH \
-          --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-          --endpoint-url http://localhost:8000 \
-          --region us-west-1
-
+            --table-name Devices \
+            --attribute-definitions AttributeName=device_id,AttributeType=S \
+            --key-schema AttributeName=device_id,KeyType=HASH \
+            --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
+            --endpoint-url http://localhost:8000 \
+            --region us-west-1
     else
         echo "${green}DynamoDB table 'Devices' already exists.${reset}"
     fi
 fi
 
-# Shutdown hook for cleanup
+# Shutdown hook for cleanup (no iTerm2 window management)
 shutdown() {
-    #Attempting to close iTerm2 ESP32 monitor window
-    if [ -n "$ITERM_WINDOW_ID" ]; then
-        echo "${cyan}Closing iTerm2 window (ID: $ITERM_WINDOW_ID)...${reset}"
-        /usr/bin/osascript <<EOF
-        tell application "iTerm"
-            try
-                repeat with w in windows
-                    if id of w is $ITERM_WINDOW_ID then
-                        close w
-                        exit repeat
-                    end if
-                end repeat
-            end try
-        end tell
-EOF
-fi
-
     echo
     echo "${cyan}Shutting down Docker services...${reset}"
     docker compose down
@@ -248,7 +257,6 @@ fi
         echo "${cyan}Stopping fake_device.py (PID=$FAKE_PY_PID)...${reset}"
         kill "$FAKE_PY_PID" 2>/dev/null || true
     fi
-
 
     echo "${green}Done. Clean exit.${reset}"
     exit 0
@@ -268,7 +276,6 @@ fi
 if [[ "$FAKE_DEVICES_COUNT" -gt 0 ]]; then
     echo "${cyan}Starting $FAKE_DEVICES_COUNT fake device(s)...${reset}"
 
-    # Activate Python venv if needed (optional)
     if [ -d ".venv" ]; then
         source .venv/bin/activate
     fi
@@ -284,5 +291,4 @@ if [ "${#SERVICES[@]}" -gt 0 ]; then
     echo "${cyan}Attaching to Docker logs — Ctrl+C to stop...${reset}"
     docker compose logs -f "${SERVICES[@]}"
 fi
-
 
