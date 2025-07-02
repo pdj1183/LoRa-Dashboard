@@ -23,7 +23,7 @@ tags
 .vscode/
 .idea/
 
-vidoe/*
+docs/video/*
 
 # ─── Node / Frontend ──────────────────────────────────────────────────────────
 # dependencies

@@ -105,6 +105,39 @@ fi
 
 echo "${cyan}FAKE_DEVICES_COUNT = $FAKE_DEVICES_COUNT${reset}"
 
+# Prompt for AWS CLI config for local DynamoDB
+AWS_DIR="$HOME/.aws"
+AWS_CONFIG_FILE="$AWS_DIR/config"
+AWS_CRED_FILE="$AWS_DIR/credentials"
+
+if [ ! -f "$AWS_CONFIG_FILE" ] || [ ! -f "$AWS_CRED_FILE" ]; then
+    mkdir -p "$AWS_DIR"
+    default_region="us-west-1"
+    default_key="your_access_key"
+    default_secret="your_secret_key"
+
+    read -p "Enter AWS Region for CLI [${default_region}]: " region
+    region=${region:-$default_region}
+    read -p "Enter AWS Access Key ID for CLI [${default_key}]: " keyid
+    keyid=${keyid:-$default_key}
+    read -p "Enter AWS Secret Access Key for CLI [${default_secret}]: " accesskey
+    accesskey=${accesskey:-$default_secret}
+
+    cat > "$AWS_CONFIG_FILE" <<EOF
+[default]
+region = $region
+output = json
+EOF
+
+    cat > "$AWS_CRED_FILE" <<EOF
+[default]
+aws_access_key_id = $keyid
+aws_secret_access_key = $accesskey
+EOF
+
+    echo "${green}Created $AWS_CONFIG_FILE and $AWS_CRED_FILE for local DynamoDB usage.${reset}"
+fi
+
 # Print selected modes
 MODE_STRING=""
 $START_BACKEND && MODE_STRING+="backend "
