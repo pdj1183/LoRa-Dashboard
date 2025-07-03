@@ -19,9 +19,15 @@ def disconnect(device_id: str, websocket: WebSocket):
 
 
 async def broadcast_telemetry_to_ws(device_id: str, data: dict):
-    print(f"[WebSocket] Broadcasting telemetry for {device_id}", flush=True)
     print(
-        f"[WebSocket] Active device IDs: {list(active_connections.keys())}", flush=True
+        f"[WebSocket] Broadcasting telemetry for  \
+            {device_id}",
+        flush=True,
+    )
+    print(
+        f"[WebSocket] Active device IDs:    \
+                {list(active_connections.keys())}",
+        flush=True,
     )
 
     if device_id in active_connections:

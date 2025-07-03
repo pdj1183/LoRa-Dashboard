@@ -14,8 +14,16 @@ router = APIRouter()
 @router.get("/telemetry", response_model=TelemetryResponse)
 async def get_telemetry(
     device_id: str,
-    start_date: Optional[int] = Query(None, description="Start timestamp (ms)"),
-    end_date: Optional[int] = Query(None, description="End timestamp (ms)"),
+    start_date: Optional[int] = Query(
+        None,
+        description="\
+            Start timestamp (ms)",
+    ),
+    end_date: Optional[int] = Query(
+        None,
+        description="\
+            End timestamp (ms)",
+    ),
 ):
     items = await get_db_telemetry(device_id, start_date, end_date)
     return {"data": items}
@@ -23,8 +31,16 @@ async def get_telemetry(
 
 @router.get("/telemetry/chart/all")
 def get_all_chart(
-    start_date: Optional[int] = Query(None, description="Start timestamp (ms)"),
-    end_date: Optional[int] = Query(None, description="End timestamp (ms)"),
+    start_date: Optional[int] = Query(
+        None,
+        description="\
+            Start timestamp (ms)",
+    ),
+    end_date: Optional[int] = Query(
+        None,
+        description="\
+            End timestamp (ms)",
+    ),
 ):
     items = get_all_telemetry_chart(start_date, end_date)
     return {"data": items}
