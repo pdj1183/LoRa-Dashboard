@@ -45,9 +45,6 @@ yarn-error.log*
 /frontend/.env
 /frontend/.env.*    # .env.local, .env.development.local, etc.
 
-# node_modules
-/frontend/package-lock.json
-
 
 # ─── Python / Backend ─────────────────────────────────────────────────────────
 # virtual envs

@@ -23,7 +23,11 @@ def on_message(client, topic, payload, qos, properties):
     try:
         msg = json.loads(payload.decode())
         device_id = topic.split("/")[2]
-        print(f"[mqtt_listener] Received telemetry from {device_id}: {msg}", flush=True)
+        print(
+            f"[mqtt_listener] Received telemetry from \
+                {device_id}: {msg}",
+            flush=True,
+        )
 
         save_telemetry(device_id, msg)
         update_device_entry(device_id)
