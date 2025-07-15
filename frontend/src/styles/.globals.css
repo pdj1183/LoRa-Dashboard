@@ -1,10 +1,89 @@
 @import './colors-generated.css';
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #272414 !important;
+        --text-color: #cac6c1 !important;
+    }
+}
+
+:root {
+    --background-color: #fdf3e5;
+    --text-color: #111;
+}
+
+[data-theme="dark"] {
+    --background-color: #181b20;
+    --text-color: #cac6c1;
+}
+
+html,
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+h1 {
+    font-size: clamp(2rem, 5vw, 2.5rem);
+    font-weight: 700;
+}
+
+h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 600;
+}
+
+h3 {
+    font-size: clamp(1.25rem, 3vw, 1.5rem);
+    font-weight: 600;
+}
+
+h4 {
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
+    font-weight: 500;
+}
+
+h5 {
+    font-size: clamp(1rem, 1.5vw, 1rem);
+    font-weight: 500;
+}
+
+h6 {
+    font-size: clamp(0.875rem, 1vw, 0.95rem);
+    font-weight: 500;
+}
+
+
 .dashboard {}
+
+.navbar {
+    display: flex;
+    flex-direction: row;
+    border-bottom: solid 2px;
+}
+
+.navbar * {
+    padding: 10px;
+}
+
+.current {
+    color: #ee7b30;
+    font-weight: 800;
+    transition: transform 0.2s ease, font-size 0.2s ease;
+    transform: scale(1.12);
+}
 
 .dataView {
     display: flex;
     flex-direction: row;
+}
+
+.selectors {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 72vw;
+    margin-left: 80px;
 }
 
 .chart-container {
@@ -21,16 +100,15 @@
     height: 85vh;
     padding: 7px;
     overflow: auto;
-    border: solid 1px black;
+    border: solid 2px;
     border-radius: 7px;
 }
 
-#anchor{
+#anchor {
     overflow: auto;
 }
 
 .liveStats {
-    top: -100px;
     position: relative;
 }
 
@@ -45,4 +123,3 @@
 .deviceLine * {
     display: inline;
 }
-

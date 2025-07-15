@@ -131,19 +131,21 @@ export default function Dashboard() {
 
     return (
         <div className="dashboard">
-            <DeviceSelector
-                devices={devices}
-                value={deviceId}
-                onChange={setDeviceId}
-            />
-            <DateSelector
-                startValue={startDate}
-                startOnChange={setStartDate}
-                endValue={endDate}
-                endOnChange={setEndDate}
-            />
             <div className="dataView">
                 <div className="chart-container">
+                    <div className="selectors">
+                        <DateSelector
+                            startValue={startDate}
+                            startOnChange={setStartDate}
+                            endValue={endDate}
+                            endOnChange={setEndDate}
+                        />
+                        <DeviceSelector
+                            devices={devices}
+                            value={deviceId}
+                            onChange={setDeviceId}
+                        />
+                    </div>
                     {deviceId ? (
                         <TelemetryChart
                             data={data}

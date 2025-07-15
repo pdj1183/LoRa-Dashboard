@@ -8,7 +8,7 @@ export default function LiveStats(props) {
     const dataLog = useContext(LiveDataContext);
     return (
         <div className="liveStats">
-            <h1> Live Stats </h1>
+            <h4> Live Stats </h4>
             <div className="statBox">
                 <div id="anchor">
                     {dataLog.map((msg, idx) => (
