@@ -113,4 +113,5 @@ secrets.cmake
 # ─── Misc & Logs ───────────────────────────────────────────────────────────────
 *.log
 logs/
-
+AGENTS.md
+Summary.md
